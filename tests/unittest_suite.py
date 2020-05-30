@@ -4,11 +4,10 @@
 import unittest
 
 from tests.utils import build_testsuite
+from tests.ml.test_base import LabelDataInstanceTest
 from tests.ml.test_data import (
-    LabelDataInstanceTest,
-    LoadingImageFilesTest,
+    LoadImageFilesTest,
     DataSpliterTest,
-    ConvertToTFRecordTest,
 )
 from tests.ml.test_serializer import WriteReadTFRecordTest
 
@@ -16,9 +15,8 @@ from tests.ml.test_serializer import WriteReadTFRecordTest
 def suite():
     test_cases = (
         LabelDataInstanceTest,
-        LoadingImageFilesTest,
+        LoadImageFilesTest,
         DataSpliterTest,
-        ConvertToTFRecordTest,
         WriteReadTFRecordTest,
     )
 

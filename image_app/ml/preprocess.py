@@ -26,7 +26,7 @@ if hasattr(Image, 'LANCZOS'):
     _PIL_INTERPOLATION_METHODS['lanczos'] = Image.LANCZOS
 
 
-def _reformat_image(img, target_size, interpolation):
+def reformat_image(img, target_size, interpolation='nearest', dtype=np.float32):
     """Reformat image
 
     Args:
@@ -34,10 +34,22 @@ def _reformat_image(img, target_size, interpolation):
         target_size: size after resized `(img_height, img_width)`
         interpolation: str
             Interpolation method to apply to the image during resizing
+        dtype: data type (default: np.float32)
+            output data type
+            choose from np.uint8, np.int16, np.int32, np.float16, np.float32
+            (np.int64 and np.float64 are not included)
 
     Returns:
-        numpy array (np.float32)
+        numpy array
+
+    Raises:
+        TypeError: when dtype is not valid
     """
+    if dtype not in (np.uint8, np.int16, np.int32, np.float16, np.float32):
+        raise TypeError('Provided dtype is not valid. Choose one of following: '
+                        '(np.uint8, np.int16, np.int32, np.float16, np.float32) '
+                        f'given type:{dtype}')
+
     if img.mode != 'RGB':
         img = img.convert('RGB')
 
@@ -52,10 +64,12 @@ def _reformat_image(img, target_size, interpolation):
                         ", ".join(_PIL_INTERPOLATION_METHODS.keys())))
             resample = _PIL_INTERPOLATION_METHODS[interpolation]
             img = img.resize(width_height_tuple, resample)
-    return np.array(img, dtype=np.float32)
+    return np.array(img, dtype=dtype)
 
 
-def load_image_from_array(arr, target_size=(224, 224), interpolation='nearest'):
+def load_image_from_array(arr, target_size=(224, 224),
+                          interpolation='nearest',
+                          dtype=np.float32):
     """Loads an image from numpy array.
     All images will be converted to `RGB` mode.
 
@@ -69,6 +83,10 @@ def load_image_from_array(arr, target_size=(224, 224), interpolation='nearest'):
             Supported methods are "nearest", "bilinear", "bicubic",
             "lanczos", "box" and "hamming".
             Default: "nearest".
+        dtype: data type (default: np.float32)
+            output data type
+            choose from np.uint8, np.int16, np.int32, np.float16, np.float32
+            (np.int64 and np.float64 are not included)
 
     Returns:
         numpy array (np.float32)
@@ -77,10 +95,12 @@ def load_image_from_array(arr, target_size=(224, 224), interpolation='nearest'):
         ValueError: raise when given iterpolation method name is not valid
     """
     img = Image.fromarray(arr)
-    return _reformat_image(img, target_size, interpolation)
+    return reformat_image(img, target_size, interpolation, dtype)
 
 
-def load_image(path, target_size=(224, 224), interpolation='nearest'):
+def load_image(path, target_size=(224, 224),
+               interpolation='nearest',
+               dtype=np.float32):
     """Loads an image.
     All images will be converted to `RGB` mode.
 
@@ -94,6 +114,10 @@ def load_image(path, target_size=(224, 224), interpolation='nearest'):
             Supported methods are "nearest", "bilinear", "bicubic",
             "lanczos", "box" and "hamming".
             Default: "nearest".
+        dtype: data type (default: np.float32)
+            output data type
+            choose from np.uint8, np.int16, np.int32, np.float16, np.float32
+            (np.int64 and np.float64 are not included)
 
     Returns:
         numpy array
@@ -103,7 +127,7 @@ def load_image(path, target_size=(224, 224), interpolation='nearest'):
     """
     with open(path, 'rb') as f:
         img = Image.open(io.BytesIO(f.read()))
-        return _reformat_image(img, target_size, interpolation)
+        return reformat_image(img, target_size, interpolation, dtype)
 
 
 def preprocess_input(x):  # pragma: no code

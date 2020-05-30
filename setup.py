@@ -8,5 +8,7 @@ setup(
     version='0.0.1dev0',
     packages=find_packages('image_app'),
     entry_points='''
+        [console_scripts]
+        image-app-pre=image_app.preprocess_raw_data:main
     '''
 )
