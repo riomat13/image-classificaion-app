@@ -9,6 +9,7 @@ setup(
     packages=find_packages('image_app'),
     entry_points='''
         [console_scripts]
+        image-app=image_app.cli:cli
         image-app-pre=image_app.preprocess_raw_data:main
     '''
 )
