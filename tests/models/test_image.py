@@ -6,8 +6,8 @@ import io
 import tempfile
 
 from image_app.app import create_app
-from image_app.orm.db import get_engine, setup_session, reset_db, drop_db
 from image_app.models._utils import generate_code
+from image_app.orm.db import reset_db, drop_db
 from image_app.models.image import Image
 
 

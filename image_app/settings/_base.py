@@ -15,8 +15,8 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY')
 
     # compiled frontend directory
-    STATIC_DIR = os.path.join(ROOT_DIR, 'frontend/build/static')
-    TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend/build')
+    STATIC_DIR = os.path.join(ROOT_DIR, 'frontend/dist')
+    TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend/dist')
     UPLOAD_DIR = 'media/uploaded'
 
     # API
