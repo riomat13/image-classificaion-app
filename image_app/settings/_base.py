@@ -16,7 +16,6 @@ class Config(object):
 
     # compiled frontend directory
     STATIC_DIR = os.path.join(ROOT_DIR, 'frontend/dist')
-    TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend/dist')
     UPLOAD_DIR = 'media/uploaded'
 
     # API

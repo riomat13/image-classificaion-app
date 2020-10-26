@@ -13,6 +13,7 @@ Pillow = "^8.0.1"
 gunicorn = "^20.0.4"
 tflite-runtime = {url = "https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp38-cp38-linux_x86_64.whl"}
 python-dotenv = "^0.14.0"
+whitenoise = "^5.2.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^5.3"

@@ -22,4 +22,4 @@ def index(path):  # pragma: no cover
 @base.route(r"/static/<regex('(.*?)\.(jpg|png|ico|js|json|txt)$'):file>", methods=["GET"])
 def public(file):
     # access public directory in frontend app
-    return send_from_directory(config.TEMPLATE_DIR, file)
+    return send_from_directory(config.STATIC_DIR, file)

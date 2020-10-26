@@ -8,6 +8,7 @@ import argparse
 
 from flask import Flask
 from werkzeug.routing import BaseConverter
+from whitenoise import WhiteNoise
 
 from image_app.settings import set_config, get_config, ROOT_DIR
 from image_app.exception import ConfigAlreadySetError
@@ -36,7 +37,7 @@ def create_app(mode: str) -> Flask:
 
     app = Flask(__name__,
                 static_folder=config.STATIC_DIR,
-                template_folder=config.TEMPLATE_DIR)
+                template_folder=config.STATIC_DIR)
 
     if not os.path.exists(os.path.join(ROOT_DIR, config.STATIC_DIR, config.UPLOAD_DIR)):
         os.makedirs(os.path.join(ROOT_DIR, config.STATIC_DIR, config.UPLOAD_DIR))
@@ -50,6 +51,9 @@ def create_app(mode: str) -> Flask:
 
     from image_app.web.api import api as api_bp
     app.register_blueprint(api_bp)
+
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root=config.STATIC_DIR)
+    app.wsgi_app.add_files(config.STATIC_DIR)
 
     if config.DEBUG:
         with app.app_context():
