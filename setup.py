@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     name='image-app',
     version='0.0.1dev0',
-    packages=find_packages('image_app'),
+    packages=find_packages(exclude=['tests']),
     entry_points='''
         [console_scripts]
         image-app=image_app.cli:cli

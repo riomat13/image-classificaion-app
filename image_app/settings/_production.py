@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ._base import Config
+from dotenv import load_dotenv
+
+from ._base import Config, ROOT_DIR
+
+load_dotenv(ROOT_DIR / '.env')
 
 
 class _DB_URI_PROPERTY(object):

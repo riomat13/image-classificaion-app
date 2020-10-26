@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ._base import Config
+from dotenv import load_dotenv
+
+from ._base import Config, ROOT_DIR
+
+load_dotenv(ROOT_DIR / '.env.dev')
 
 
 class TestConfig(Config):
@@ -12,4 +16,5 @@ class TestConfig(Config):
 
     UPLOAD_DIR = 'media/test'
 
-    DATABASE_URI = 'sqlite:///app-test.db'
+    # TODO: can use in memory DB?
+    DATABASE_URI = 'sqlite:////tmp/test.db'
