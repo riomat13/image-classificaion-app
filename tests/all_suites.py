@@ -2,17 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import os.path
 
-from image_app.settings import ROOT_DIR
+from tests.integration_suite import test_cases as itest_cases
+from tests.unittest_suite import test_cases as utest_cases
 
 
-def suite():
-    loader = unittest.TestLoader()
-    suite = loader.discover('.', pattern='test*', top_level_dir=ROOT_DIR)
+def load_tests(loader, tests, pattern):
+    suite = unittest.TestSuite()
+    for test_cls in utest_cases + itest_cases:
+        tests = loader.loadTestsFromTestCase(test_cls)
+        suite.addTests(tests)
+
     return suite
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    unittest.main()

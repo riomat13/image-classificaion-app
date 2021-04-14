@@ -3,27 +3,31 @@
 
 import unittest
 
-from tests.utils import build_testsuite
-from tests.ml.test_base import LabelDataInstanceTest
+from tests.ml.test_base import DogBreedClassificationLabelDataTest
 from tests.ml.test_data import (
     LoadImageFilesTest,
     DataSpliterTest,
 )
 from tests.ml.test_serializer import WriteReadTFRecordTest
+from tests.services.test_handlers import HandlersTest
 
 
-def suite():
-    test_cases = (
-        LabelDataInstanceTest,
-        LoadImageFilesTest,
-        DataSpliterTest,
-        WriteReadTFRecordTest,
-    )
+test_cases = (
+    DogBreedClassificationLabelDataTest,
+    LoadImageFilesTest,
+    DataSpliterTest,
+    WriteReadTFRecordTest,
+    HandlersTest,
+)
 
-    suite = build_testsuite(test_cases)
+
+def load_tests(loader, tests, pattern):
+    suite = unittest.TestSuite()
+    for test_cls in test_cases:
+        tests = loader.loadTestsFromTestCase(test_cls)
+        suite.addTests(tests)
     return suite
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    unittest.main()

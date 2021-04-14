@@ -1,16 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
 import os.path
+from typing import List
 
 from image_app.settings import ROOT_DIR
 
 
-class LabelData(object):
+class LabelData(abc.ABC):
+
+    @abc.abstractclassmethod
+    def get_label_by_id(self, id) -> str:  # pragma: no cover
+        raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def get_id_by_label(self, label) -> int:  # pragma: no cover
+        raise NotImplementedError
+
+    @abc.abstractstaticmethod
+    def get_label_data():
+        raise NotImplementedError
+
+
+class DogBreedClassificationLabelData(LabelData):
+    """Label data for Dog breed classification."""
     __instance = None
 
     def __init__(self):
-        if LabelData.__instance is not None:
+        if DogBreedClassificationLabelData.__instance is not None:
             raise RuntimeError('Already created. Use `get_label_data()` instead.')
 
         self._label2id = {}
@@ -24,7 +42,7 @@ class LabelData(object):
                 self._label2id[name] = len(self._id2label)
                 self._id2label.append(name)
 
-        LabelData.__instance = self
+        DogBreedClassificationLabelData.__instance = self
 
     def __len__(self):
         return len(self._id2label)
@@ -43,14 +61,14 @@ class LabelData(object):
         for label in self._id2label:
             yield label
 
-    def get_label_by_id(self, id):  # pragma: no cover
+    def get_label_by_id(self, id) -> str:  # pragma: no cover
         return self._id2label[id]
 
-    def get_id_by_label(self, label):  # pragma: no cover
+    def get_id_by_label(self, label) -> int:  # pragma: no cover
         return self._label2id[label]
 
     @property
-    def id2label(self):  # pragma: no cover
+    def id2label(self) -> List[str]:  # pragma: no cover
         return self._id2label[:]
 
     @property
@@ -58,14 +76,12 @@ class LabelData(object):
         return self._label2id.copy()
 
     @staticmethod
-    def get_label_data():
-        if LabelData.__instance is None:
-            obj = LabelData()
+    def get_label_data() -> 'DogBreedClassificationLabelData':
+        if DogBreedClassificationLabelData.__instance is None:
+            obj = DogBreedClassificationLabelData()
 
-        return LabelData.__instance
+        return DogBreedClassificationLabelData.__instance
 
-    def get_label_count(self):
+    def get_label_count(self) -> int:
         """Return number of classes."""
         return self.__len__()
-
-

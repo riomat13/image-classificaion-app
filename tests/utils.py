@@ -29,13 +29,3 @@ class _CalledCounter(object):
     @property
     def kwarg_items(self):
         return self._kwarg_items
-
-
-def build_testsuite(test_cases):
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for test_cls in test_cases:
-        tests = loader.loadTestsFromTestCase(test_cls)
-        suite.addTests(tests)
-    return suite

@@ -3,23 +3,28 @@
 
 import unittest
 
-from tests.utils import build_testsuite
 from tests.models.test_mixins import BasicModelFeatureTest
-from tests.models.test_image import ImageModelTest
+from tests.models.test_image import ImageModelFeatureTest
 from tests.ml.test_data import DataGeneratorIntegrationTest
+from tests.web.test_api import ServingModelAPITest, UploadImageTest
 
 
-def suite():
-    test_cases = (
-        BasicModelFeatureTest,
-        ImageModelFeatureTest,
-        DataGeneratorIntegrationTest,
-    )
+test_cases = (
+    BasicModelFeatureTest,
+    ImageModelFeatureTest,
+    DataGeneratorIntegrationTest,
+    ServingModelAPITest,
+    UploadImageTest,
+)
 
-    suite = build_testsuite(test_cases)
+
+def load_tests(loader, tests, pattern):
+    suite = unittest.TestSuite()
+    for test_cls in test_cases:
+        tests = loader.loadTestsFromTestCase(test_cls)
+        suite.addTests(tests)
     return suite
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    unittest.main()

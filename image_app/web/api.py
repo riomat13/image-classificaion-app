@@ -10,10 +10,10 @@ from werkzeug.utils import secure_filename
 import numpy as np
 
 from image_app.exception import FileEmptyError
-from image_app.ml.base import LabelData
-from image_app.ml.preprocess import load_image
-from image_app.ml.infer import infer_image
+from image_app.ml.base import DogBreedClassificationLabelData
+from image_app.ml.infer import DogBreedClassificationInferenceModel
 from image_app.models.image import Image
+from image_app.services import commands, handlers
 from image_app.settings import get_config
 
 
@@ -30,7 +30,7 @@ def ping():  # pragma: no cover
 
 @api.route('/prediction/label/<int:id>', methods=['GET'])
 def fetch_label_by_id(id):
-    labels = LabelData.get_label_data()
+    labels = DogBreedClassificationLabelData.get_label_data()
     label_name = labels.get_label_by_id(id)
 
     kwargs = {
@@ -44,7 +44,7 @@ def fetch_label_by_id(id):
 
 @api.route('/prediction/labels/list', methods=['GET'])
 def fetch_label_list():
-    labels = LabelData.get_label_data()
+    labels = DogBreedClassificationLabelData.get_label_data()
     label_list = labels.id2label
 
     kwargs = {
@@ -80,7 +80,6 @@ def _read_and_save_image(img_file):
             img_model.save()
 
             encode = img_model.get_encode()
-            logger.debug('encoded')
 
         except FileEmptyError as e:
             kwargs = {
@@ -164,12 +163,18 @@ def predict_image():
         try:
             model = Image.get_by_encoded_id(kwargs.get('imgId'))
             filepath = os.path.join(config.STATIC_DIR, config.UPLOAD_DIR, model.filename)
-            img = load_image(filepath)
 
-            result = infer_image(img)
+            pred = handlers.make_prediction(
+                commands.MakePrediction(filepath, DogBreedClassificationInferenceModel())
+            )
+            result = handlers.label_prediction(
+                commands.LabelPrediction(prediction=pred, label_data=DogBreedClassificationLabelData.get_label_data(), topk=3)
+            )
+
+            # convert float to percentages to display to be readable
             result = list(map(serialize_predict_result, result))
-
             kwargs['result'] = result
+
         except Exception as e:
             if config.DEBUG:  # pragma: no cover
                 logger.error(traceback.format_exc())
@@ -183,51 +188,6 @@ def predict_image():
 
     response = jsonify(kwargs)
     response.status_code = status_code
-
-    return response
-
-
-@api.route('/prediction/serve/image_id', methods=['GET'])
-def predict_image_by_id():  # pragma: no cover
-    """Predict image by image ID.
-    This is for checking model improvement.
-    """
-    data = request.get_json()
-    img_id = data.get('imgId')
-    image = Image.get_by_encoded_id(img_id)
-
-    if image is None:
-        kwargs = {
-            'status': 'error',
-            'message': 'invalid image id'
-        }
-        response = jsonify(kwargs)
-        response.status_code = 400
-
-    else:
-        try:
-            # get top-3 labels with propabilities
-            img_path = os.path.join(config.STATIC_DIR, config.UPLOAD_DIR, image.filename)
-            result = infer_image(img_path)
-            result = list(map(serialize_predict_result, result))
-
-            kwargs = {
-                'status': 'success',
-                'result': result
-            }
-            response = jsonify(kwargs)
-            response.status_code = 200
-        except Exception as e:
-            if config.DEBUG:  # pragma: no cover
-                logger.error(traceback.format_exc())
-            else:  # pragma: no cover
-                logger.error(e)
-            kwargs = {
-                'status': 'error',
-                'message': 'a problem occured during prediction'
-            }
-            response = jsonify(kwargs)
-            response.status_code = 500
 
     return response
 

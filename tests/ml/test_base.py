@@ -3,22 +3,22 @@
 
 import unittest
 
-from image_app.ml.base import LabelData
+from image_app.ml.base import DogBreedClassificationLabelData
 
 
-class LabelDataInstanceTest(unittest.TestCase):
+class DogBreedClassificationLabelDataTest(unittest.TestCase):
 
     def test_object_creaton_by_instantiation(self):
-        labels = LabelData.get_label_data()
+        labels = DogBreedClassificationLabelData.get_label_data()
 
         with self.assertRaises(RuntimeError):
-            LabelData()
+            DogBreedClassificationLabelData()
 
-        labels2 = LabelData.get_label_data()
+        labels2 = DogBreedClassificationLabelData.get_label_data()
         self.assertTrue(labels is labels2)
 
     def test_label_set_creation(self):
-        labels = LabelData.get_label_data()
+        labels = DogBreedClassificationLabelData.get_label_data()
         self.assertEqual(len(labels), 121)
 
         # match order in iteration and
@@ -28,7 +28,7 @@ class LabelDataInstanceTest(unittest.TestCase):
             self.assertEqual(i, labels[label])
 
     def test_label_sets(self):
-        labels = LabelData.get_label_data()
+        labels = DogBreedClassificationLabelData.get_label_data()
 
         self.assertEqual(labels.get_label_count(), 121)
 
