@@ -7,9 +7,6 @@ import warnings as _warnings
 import configparser as _configparser
 
 from ._base import ROOT_DIR, Config
-from ._production import ProductionConfig
-from ._development import DevelopmentConfig
-from ._test import TestConfig
 from ._helper import ini_parser, dotenv_parser
 from image_app.exception import ConfigAlreadySetError
 
@@ -44,10 +41,13 @@ class _ConfigFactory(object):
         cls.__new__(cls)
 
         if config_type == 'dev':
+            from ._development import DevelopmentConfig
             cls.__config = DevelopmentConfig
         elif config_type == 'test':
+            from ._test import TestConfig
             cls.__config = TestConfig
         elif config_type == 'production':
+            from ._production import ProductionConfig
             cls.__config = ProductionConfig
         else:
             _warnings.warn('Unrecognized config type. Use `development` mode')

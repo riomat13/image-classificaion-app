@@ -8,11 +8,24 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parents[2]
 
 
+class EnvironmentProperty(object):
+    """Property to load lazily."""
+    def __init__(self, key, default=None):
+        self.key = key
+        self.value = None
+        self.default = default
+
+    def __get__(self, instance, owner):
+        if self.value is None:
+            self.value = os.environ.get(self.key, self.default)
+        return self.value
+
+
 class Config(object):
     DEBUG = False
     TESTING = False
 
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = EnvironmentProperty('SECRET_KEY')
 
     # compiled frontend directory
     STATIC_DIR = os.path.join(ROOT_DIR, 'frontend/dist')
@@ -23,15 +36,15 @@ class Config(object):
 
     # ML Model settings
     LABEL_LIST_PATH = os.path.join(ROOT_DIR, 'data/category_list.txt')
-    MODEL_PATH = os.environ.get('APP_MODEL_PATH', 'saved_model/base.tflite')
+    MODEL_PATH = EnvironmentProperty('APP_MODEL_PATH', 'saved_model/base.tflite')
 
     # database settings
-    DATABASE_NAME = os.environ.get('FLASK_DB_NAME')
-    DATABASE_HOST = os.environ.get('FLASK_DB_HOST')
-    DATABASE_PORT = os.environ.get('FLASK_DB_PORT')
-    DATABASE_USERNAME = os.environ.get('FLASK_DB_USER')
-    DATABASE_PASSWORD = os.environ.get('FLASK_DB_PASSWORD')
-    DATABASE_URI = os.environ.get('FLASK_DB_URI')
+    DATABASE_NAME = EnvironmentProperty('FLASK_DB_NAME')
+    DATABASE_HOST = EnvironmentProperty('FLASK_DB_HOST')
+    DATABASE_PORT = EnvironmentProperty('FLASK_DB_PORT')
+    DATABASE_USERNAME = EnvironmentProperty('FLASK_DB_USER')
+    DATABASE_PASSWORD = EnvironmentProperty('FLASK_DB_PASSWORD')
+    DATABASE_URI = EnvironmentProperty('FLASK_DB_URI')
 
     def __str__(self):
         return self.__name__

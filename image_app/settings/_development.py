@@ -3,7 +3,7 @@
 
 from dotenv import load_dotenv
 
-from ._base import Config, ROOT_DIR
+from ._base import Config, EnvironmentProperty, ROOT_DIR
 
 load_dotenv(ROOT_DIR / '.env.dev')
 
