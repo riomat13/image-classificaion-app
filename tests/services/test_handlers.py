@@ -3,12 +3,17 @@
 import unittest
 from unittest.mock import patch
 
+import os
+import tempfile
+
 import numpy as np
 
+from image_app.exception import InvalidImageDataFormat
 from image_app.services import commands
 from image_app.services.handlers import make_prediction, label_prediction
 from image_app.ml.base import LabelData
 from image_app.ml.infer import InferenceModel
+from image_app.settings import ROOT_DIR
 
 
 class FakeLabelData(LabelData):

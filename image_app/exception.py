@@ -8,9 +8,11 @@ class BaseError(Exception):
 
 class ConfigAlreadySetError(BaseError):
     """Raise when config is already set."""
-    pass
 
 
 class FileEmptyError(BaseError):
     """Raise when a file is empty."""
-    pass
+
+
+class InvalidImageDataFormat(BaseError):
+    """Raise when failed to load data due to wrong format."""

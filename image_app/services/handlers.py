@@ -3,8 +3,10 @@
 from typing import List, Tuple
 
 import numpy as np
+from PIL import UnidentifiedImageError
 
 from . import commands
+from image_app.exception import InvalidImageDataFormat
 from image_app.types import PredictionResult
 from image_app.ml.base import LabelData
 from image_app.ml.data import convert_image_to_tensor

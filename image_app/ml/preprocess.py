@@ -43,7 +43,7 @@ def reformat_image(img, target_size, interpolation='nearest', dtype=np.float32):
         numpy array
 
     Raises:
-        TypeError: when dtype is not valid
+        TypeError: If `dtype` is not valid
     """
     if dtype not in (np.uint8, np.int16, np.int32, np.float16, np.float32):
         raise TypeError('Provided dtype is not valid. Choose one of following: '
@@ -92,7 +92,7 @@ def load_image_from_array(arr, target_size=(224, 224),
         numpy array (np.float32)
 
     Raises:
-        ValueError: raise when given iterpolation method name is not valid
+        ValueError: Raise when given iterpolation method name is not valid
     """
     img = Image.fromarray(arr)
     return reformat_image(img, target_size, interpolation, dtype)
@@ -120,10 +120,11 @@ def load_image(path, target_size=(224, 224),
             (np.int64 and np.float64 are not included)
 
     Returns:
-        numpy array
+        numpy array with given `target_size` with 3-channel
 
     Raises:
-        ValueError: raise when given iterpolation method name is not valid
+        FileNotFoundError: If the file cannot be found
+        ValueError: Raise when given iterpolation method name is not valid
     """
     with open(path, 'rb') as f:
         img = Image.open(io.BytesIO(f.read()))
