@@ -6,7 +6,6 @@ import os
 import traceback
 
 from flask import Blueprint, Response, jsonify, request, current_app, abort
-from werkzeug.utils import secure_filename
 import numpy as np
 
 from image_app.exception import FileEmptyError
@@ -15,7 +14,6 @@ from image_app.ml.infer import DogBreedClassificationInferenceModel
 from image_app.models.image import Image
 from image_app.services import commands, handlers
 from image_app.settings import get_config
-
 
 logger = logging.getLogger(__file__)
 api = Blueprint('api', __name__, url_prefix='/api/v1')
@@ -56,30 +54,14 @@ def fetch_label_list():
     return response
 
 
-def _read_and_save_image(img_file):
+def upload_image_file_object(img_file):
     """Read image file data and save to Database if valid.
     Return error if the given file is invalid.
     """
 
     if img_file:
         try:
-            filename = secure_filename(img_file.filename)
-            fname, ext = os.path.splitext(filename)
-            fname = Image.query.count() + 1
-            filename = f'{fname:05d}{ext}'
-
-            filepath = os.path.join(config.UPLOAD_DIR, filename)
-
-            img_file.save(img_path:=os.path.join(config.STATIC_DIR, filepath))
-
-            if not os.stat(img_path).st_size:
-                os.remove(img_path)
-                raise FileEmptyError()
-
-            img_model = Image(filename=filename)
-            img_model.save()
-
-            encode = img_model.get_encode()
+            encode = handlers.upload_image(commands.UploadImage(file_object=img_file))
 
         except FileEmptyError as e:
             kwargs = {
@@ -93,7 +75,7 @@ def _read_and_save_image(img_file):
                 'status': 'error',
                 'message': 'failed to save image'
             }
-            
+
             if config.DEBUG:  # pragma: no cover
                 logger.error(traceback.format_exc())
             else:           # pragma: no cover
@@ -131,7 +113,7 @@ def upload_image(session=None):
         }
     """
     img_file = request.files['file']
-    kwargs, status_code = _read_and_save_image(img_file)
+    kwargs, status_code = upload_image_file_object(img_file)
 
     response = jsonify(kwargs)
     response.status_code = status_code
@@ -157,7 +139,7 @@ def predict_image():
         }
     """
     img_file = request.files['file']
-    kwargs, status_code = _read_and_save_image(img_file)
+    kwargs, status_code = upload_image_file_object(img_file)
 
     if status_code == 201:
         try:

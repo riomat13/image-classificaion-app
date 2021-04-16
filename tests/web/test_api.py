@@ -4,16 +4,19 @@
 import unittest
 from unittest.mock import patch, Mock
 
-import logging
-import os
 import io
 import json
+import logging
+import os
+import tempfile
 
 import numpy as np
+from PIL import Image
 from sqlalchemy.exc import SQLAlchemyError
 
 from image_app.app import create_app
-from image_app.settings import ROOT_DIR
+from image_app.orm.db import drop_db, reset_db, setup_session
+from image_app.settings import ROOT_DIR, get_config
 
 from tests.services.test_handlers import FakeInferenceModel, FakeLabelData
 
@@ -25,16 +28,20 @@ label_list = ['dog', 'cat', 'lion', 'tiger', 'jaguar', 'giraffe', 'panda', 'fox'
 class _Base(unittest.TestCase):
 
     @classmethod
+    def setUpClass(cls):
+        cls.app = create_app('test')
+        cls.app_context = cls.app.app_context()
+        cls.app_context.push()
+        setup_session(get_config())
 
     def setUp(self):
-        self.app = create_app('test')
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
+        reset_db()
         self.client = self.app.test_client()
 
-    def tearDown(self):
-        self.app_context.pop()
+    @classmethod
+    def tearDownClass(cls):
+        cls.app_context.pop()
+        drop_db()
 
 
 class UploadImageTest(_Base):
@@ -66,44 +73,29 @@ class UploadImageTest(_Base):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res_list, label_list)
 
-
-    @patch('image_app.web.api.os.path.join', return_value='/tmp/test.jpg')
-    @patch('image_app.web.api.secure_filename', return_value='test.jpg')
-    @patch('image_app.web.api.Image')
-    def test_image_uploaded(self, Image, secure_filename, *args):
+    def test_image_uploaded(self):
         res = self.client.get(
             '/api/v1/prediction/upload/image'
         )
         # should not be found if invalid request type
         self.assertEqual(res.status_code, 404)
 
-        mock_model = Mock()
-        Image.return_value = mock_model
-        target_id = 10
-        Image.query.count.return_value = target_id
-        mock_model.get_encode.return_value = 'encoded'
+        image = Image.new('RGB', size=(100, 100), color=(0, 0, 0))
 
-        test_data = io.BytesIO(b'test')
-        test_data.save = Mock()
+        with tempfile.NamedTemporaryFile(delete=False) as test_file:
+            image.save(test_file.name, 'JPEG')
+            image.close()
 
-        res = self.client.post(
-            '/api/v1/prediction/upload/image',
-            data=dict(file=(test_data, 'init.jpg')),
-            content_type='multipart/form-data'
-        )
+            res = self.client.post(
+                '/api/v1/prediction/upload/image',
+                data=dict(file=(test_file, test_file.name)),
+                content_type='multipart/form-data'
+            )
 
         self.assertEqual(res.status_code, 201)
         self.assertIsNotNone(res.json.get('imgId'))
-        secure_filename.assert_called_once_with('init.jpg')
-        mock_model.get_encode.assert_called_once()
 
-    @patch('image_app.web.api.Image')
-    def test_handle_failed_saving_image(self, Image):
-        mock_model = Mock()
-        mock_model.save.side_effect = SQLAlchemyError
-        Image.return_value = mock_model
-        Image.query.count.return_value = 1
-
+    def test_handle_failed_saving_image(self):
         test_data = io.BytesIO(b'test')
         res = self.client.post(
             '/api/v1/prediction/upload/image',
@@ -131,7 +123,7 @@ class ServingModelAPITest(_Base):
 
     @patch('image_app.web.api.DogBreedClassificationLabelData', FakeLabelData)
     @patch('image_app.web.api.DogBreedClassificationInferenceModel', FakeInferenceModel)
-    @patch('image_app.web.api._read_and_save_image', return_value=({}, 201))
+    @patch('image_app.web.api.upload_image_file_object', return_value=({}, 201))
     @patch('image_app.web.api.Image')
     def test_serve_result(self, MockImage, *args):
         model = Mock()
@@ -165,7 +157,7 @@ class ServingModelAPITest(_Base):
         self.assertEqual(data.get('status'), 'error')
 
     @patch('image_app.web.api.DogBreedClassificationInferenceModel.infer', side_effect=RuntimeError)
-    @patch('image_app.web.api._read_and_save_image', return_value=({}, 201))
+    @patch('image_app.web.api.upload_image_file_object', return_value=({}, 201))
     def test_handle_error_during_inference(self, _, infer_image):
         test_data = io.BytesIO(b'test')
 

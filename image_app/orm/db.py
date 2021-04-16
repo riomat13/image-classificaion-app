@@ -104,10 +104,15 @@ class _Session(object):
         return wrapper
 
     def init_db(self):
+        if self.engine is None:
+            self.setup_session()
         self.Base.metadata.create_all(self.engine)
 
     def drop_db(self, conn=None):
         conn = conn or self.engine
+        if conn is None:
+            self.setup_session()
+            conn = self.engine
         self.Base.metadata.drop_all(self.engine)
 
     def reset_db(self, conn=None):

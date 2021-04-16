@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import patch
 
+from image_app.settings import set_config
+set_config('test')
+
 import os
 import tempfile
 
