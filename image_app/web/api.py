@@ -12,7 +12,8 @@ from image_app.exception import FileEmptyError
 from image_app.ml.base import DogBreedClassificationLabelData
 from image_app.ml.infer import DogBreedClassificationInferenceModel
 from image_app.models.image import Image
-from image_app.services import commands, handlers
+from image_app.services import commands
+from image_app.services.messagebus import messagebus
 from image_app.settings import get_config
 
 logger = logging.getLogger(__file__)
@@ -61,7 +62,7 @@ def upload_image_file_object(img_file):
 
     if img_file:
         try:
-            encode = handlers.upload_image(commands.UploadImage(file_object=img_file))
+            encode = messagebus.handle(commands.UploadImage(file_object=img_file))
 
         except FileEmptyError as e:
             kwargs = {
@@ -146,11 +147,15 @@ def predict_image():
             model = Image.get_by_encoded_id(kwargs.get('imgId'))
             filepath = os.path.join(config.STATIC_DIR, config.UPLOAD_DIR, model.filename)
 
-            pred = handlers.make_prediction(
+            pred = messagebus.handle(
                 commands.MakePrediction(filepath, DogBreedClassificationInferenceModel())
             )
-            result = handlers.label_prediction(
-                commands.LabelPrediction(prediction=pred, label_data=DogBreedClassificationLabelData.get_label_data(), topk=3)
+            result = messagebus.handle(
+                commands.LabelPrediction(
+                    prediction=pred,
+                    label_data=DogBreedClassificationLabelData.get_label_data(),
+                    topk=3
+                )
             )
 
             # convert float to percentages to display to be readable

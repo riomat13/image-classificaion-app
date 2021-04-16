@@ -13,7 +13,7 @@ import numpy as np
 
 from image_app.exception import InvalidImageDataFormat
 from image_app.services import commands
-from image_app.services.handlers import make_prediction, label_prediction
+from image_app.services.messagebus import messagebus
 from image_app.ml.base import LabelData
 from image_app.ml.infer import InferenceModel
 from image_app.settings import ROOT_DIR
@@ -45,7 +45,7 @@ class FakeInferenceModel(InferenceModel):
 class HandlersTest(unittest.TestCase):
 
     def test_run_prediction(self):
-        pred = make_prediction(
+        pred = messagebus.handle(
             commands.MakePrediction(
                 image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
                 model=FakeInferenceModel(),
@@ -58,7 +58,7 @@ class HandlersTest(unittest.TestCase):
         fp.write(b'non-image data')
 
         with self.assertRaises(InvalidImageDataFormat):
-            make_prediction(
+            messagebus.handle(
                 commands.MakePrediction(
                     image_path=fp.name,
                     model=FakeInferenceModel(),
@@ -69,7 +69,7 @@ class HandlersTest(unittest.TestCase):
         data = np.random.randint(1, 100, len(FakeLabelData.labels)).astype(np.float32)
         data /= data.sum()
 
-        result = label_prediction(
+        result = messagebus.handle(
             commands.LabelPrediction(prediction=data, label_data=FakeLabelData(), topk=2)
         )
         self.assertEqual(len(result), 2)

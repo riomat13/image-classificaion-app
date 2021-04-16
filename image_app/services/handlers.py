@@ -2,7 +2,7 @@
 
 import io
 import os
-from typing import List, Tuple
+from typing import Deque, List, Tuple, Union
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
@@ -21,7 +21,7 @@ from image_app.settings import get_config
 config = get_config()
 
 
-def upload_image(cmd: commands.UploadImage):
+def upload_image(cmd: commands.UploadImage) -> str:
     """Upload image data from client.
 
     Args:
@@ -30,7 +30,7 @@ def upload_image(cmd: commands.UploadImage):
             file_object: werkzeug.datastructures.FileStorage
 
     Returns:
-        str
+        str: encoded image ID
 
     Raises:
         InvalidImageDataFormat: If file data format is not image
@@ -94,3 +94,10 @@ def label_prediction(cmd: commands.LabelPrediction) -> List[PredictionResult]:
     most_likelies = np.argsort(cmd.prediction)[-cmd.topk:]
     return [(cmd.label_data.get_label_by_id(most_likelies[i]), cmd.prediction[most_likelies[i]])
             for i in reversed(range(cmd.topk))]
+
+
+COMMAND_HANDLERS = {
+    commands.UploadImage: upload_image,
+    commands.MakePrediction: make_prediction,
+    commands.LabelPrediction: label_prediction,
+}
