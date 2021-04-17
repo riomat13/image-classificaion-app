@@ -16,3 +16,7 @@ class FileEmptyError(BaseError):
 
 class InvalidImageDataFormat(BaseError):
     """Raise when failed to load data due to wrong format."""
+
+
+class InvalidMessage(BaseError):
+    """Raise when message data contains invalid data."""

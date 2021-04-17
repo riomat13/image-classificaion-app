@@ -8,8 +8,8 @@ import numpy as np
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
-from . import commands
-from image_app.exception import FileEmptyError, InvalidImageDataFormat
+from . import commands, events
+from image_app.exception import FileEmptyError, InvalidImageDataFormat, InvalidMessage
 from image_app.types import PredictionResult
 from image_app.ml.base import LabelData
 from image_app.ml.data import convert_image_to_tensor
@@ -20,8 +20,10 @@ from image_app.settings import get_config
 
 config = get_config()
 
+Message = Union[events.Event, commands.Command]
 
-def upload_image(cmd: commands.UploadImage) -> str:
+
+def upload_image(cmd: commands.UploadImage, _) -> str:
     """Upload image data from client.
 
     Args:
@@ -67,7 +69,7 @@ def upload_image(cmd: commands.UploadImage) -> str:
     return encode
 
 
-def make_prediction(cmd: commands.MakePrediction) -> np.ndarray:
+def make_prediction(cmd: commands.MakePrediction, queue: Deque[Message]) -> np.ndarray:
     """Make prediction from image.
 
     Args:
@@ -80,24 +82,44 @@ def make_prediction(cmd: commands.MakePrediction) -> np.ndarray:
     Raises:
         FileNotFoundError: If given file path does not exist
         InvalidImageDataFormat: If content of a file is not an image
+        ValueError: If topk is negative
     """
     try:
         image = load_image(cmd.image_path)
     except UnidentifiedImageError as e:
         raise InvalidImageDataFormat(f'The file data is not readable: {cmd.image_path}')
     image = preprocess_input(image)
-    return cmd.model.infer(image)
+    prediction = cmd.model.infer(image)
+
+    if cmd.topk is not None and cmd.topk != 0:
+        if cmd.label_data is None:
+            raise InvalidMessage('LabelData is not provided')
+        queue.append(
+            events.Predicted(prediction=prediction,
+                label_data=cmd.label_data,
+                topk=cmd.topk
+            )
+        )
+
+    return prediction
 
 
-def label_prediction(cmd: commands.LabelPrediction) -> List[PredictionResult]:
+# currently this can be used for both event and command
+def to_labels(message: Message, _) -> List[PredictionResult]:
     """Add label to the predicted result."""
-    most_likelies = np.argsort(cmd.prediction)[-cmd.topk:]
-    return [(cmd.label_data.get_label_by_id(most_likelies[i]), cmd.prediction[most_likelies[i]])
-            for i in reversed(range(cmd.topk))]
+    if message.topk < 1:
+        raise ValueError('`topk` value must be positive')
 
+    most_likelies = np.argsort(message.prediction)[-message.topk:]
+    return [(message.label_data.get_label_by_id(most_likelies[i]), message.prediction[most_likelies[i]])
+            for i in reversed(range(message.topk))]
 
 COMMAND_HANDLERS = {
     commands.UploadImage: upload_image,
     commands.MakePrediction: make_prediction,
-    commands.LabelPrediction: label_prediction,
+    commands.LabelPrediction: to_labels,
+}
+
+EVENT_HANDLERS = {
+    events.Predicted: to_labels,
 }

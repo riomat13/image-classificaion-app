@@ -147,15 +147,12 @@ def predict_image():
             model = Image.get_by_encoded_id(kwargs.get('imgId'))
             filepath = os.path.join(config.STATIC_DIR, config.UPLOAD_DIR, model.filename)
 
-            pred = messagebus.handle(
-                commands.MakePrediction(filepath, DogBreedClassificationInferenceModel())
-            )
             result = messagebus.handle(
-                commands.LabelPrediction(
-                    prediction=pred,
-                    label_data=DogBreedClassificationLabelData.get_label_data(),
-                    topk=3
-                )
+                commands.MakePrediction(
+                    image_path=filepath,
+                    model=DogBreedClassificationInferenceModel(),
+                    topk=3,
+                    label_data=DogBreedClassificationLabelData.get_label_data())
             )
 
             # convert float to percentages to display to be readable

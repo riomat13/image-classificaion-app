@@ -11,7 +11,7 @@ import tempfile
 
 import numpy as np
 
-from image_app.exception import InvalidImageDataFormat
+from image_app.exception import InvalidImageDataFormat, InvalidMessage
 from image_app.services import commands
 from image_app.services.messagebus import messagebus
 from image_app.ml.base import LabelData
@@ -73,6 +73,39 @@ class HandlersTest(unittest.TestCase):
             commands.LabelPrediction(prediction=data, label_data=FakeLabelData(), topk=2)
         )
         self.assertEqual(len(result), 2)
+
+    def test_get_labels_with_prediction(self):
+        result = messagebus.handle(
+            commands.MakePrediction(
+                image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
+                model=FakeInferenceModel(),
+                topk=3,
+                label_data=FakeLabelData(),
+            )
+        )
+
+        self.assertEqual(len(result), 3)
+
+    def test_raise_error_if_topk_is_negative(self):
+        with self.assertRaises(ValueError):
+            messagebus.handle(
+                commands.MakePrediction(
+                    image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
+                    model=FakeInferenceModel(),
+                    topk=-3,
+                    label_data=FakeLabelData(),
+                )
+            )
+
+    def test_raise_if_label_data_is_not_provided(self):
+        with self.assertRaises(InvalidMessage):
+            messagebus.handle(
+                commands.MakePrediction(
+                    image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
+                    model=FakeInferenceModel(),
+                    topk=-3,
+                )
+            )
 
 
 if __name__ == '__main__':
