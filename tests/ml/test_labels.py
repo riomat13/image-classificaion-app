@@ -3,7 +3,7 @@
 
 import unittest
 
-from image_app.ml.base import DogBreedClassificationLabelData
+from image_app.ml.labels import DogBreedClassificationLabelData
 
 
 class DogBreedClassificationLabelDataTest(unittest.TestCase):

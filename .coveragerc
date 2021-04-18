@@ -11,6 +11,7 @@ omit =
     image_app/cli.py
     image_app/exception.py
     image_app/orm/db.py
+    image_app/ml/base.py
     image_app/ml/preprocess.py
     image_app/ml/serializer.py
     tests/*

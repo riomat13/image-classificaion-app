@@ -2,8 +2,9 @@
 
 import os
 
-from .base import LabelData, DogBreedClassificationLabelData
-from .infer import InferenceModel, DogBreedClassificationInferenceModel
+from .base import InferenceModel, LabelData
+from .infer import DogBreedClassificationInferenceModel
+from .labels import DogBreedClassificationLabelData
 
 
 __all__ = ('ML_MODELS', 'MODEL_TYPES', 'InferenceModel', 'LabelData', 'get_model_data', 'get_label_data')
@@ -12,7 +13,7 @@ __all__ = ('ML_MODELS', 'MODEL_TYPES', 'InferenceModel', 'LabelData', 'get_model
 ML_MODELS = {
     'DOG_BREED': {
         'MODEL_DATA': DogBreedClassificationInferenceModel(),
-        'LABEL_DATA': DogBreedClassificationLabelData()
+        'LABEL_DATA': DogBreedClassificationLabelData.get_label_data()
     },
 }
 

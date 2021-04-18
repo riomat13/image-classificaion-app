@@ -3,17 +3,19 @@
 
 import unittest
 
-from tests.ml.test_base import DogBreedClassificationLabelDataTest
 from tests.ml.test_data import (
     LoadImageFilesTest,
     DataSpliterTest,
 )
+from tests.ml.test_infer import DogBreedClassificationInferenceModelTest
+from tests.ml.test_labels import DogBreedClassificationLabelDataTest
 from tests.ml.test_serializer import WriteReadTFRecordTest
 from tests.services.test_handlers import HandlersTest
 
 
 test_cases = (
     DogBreedClassificationLabelDataTest,
+    DogBreedClassificationInferenceModelTest,
     LoadImageFilesTest,
     DataSpliterTest,
     WriteReadTFRecordTest,

@@ -22,7 +22,7 @@ except ConfigAlreadySetError:
     pass
 
 from image_app.app import create_app
-from image_app.ml.base import DogBreedClassificationLabelData
+from image_app.ml.labels import DogBreedClassificationLabelData
 from image_app.orm.db import drop_db, reset_db, setup_session
 
 logging.disable(logging.CRITICAL)

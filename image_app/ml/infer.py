@@ -12,17 +12,11 @@ except ImportError:
     import tensorflow.lite as tflite
 
 from image_app.settings import get_config, ROOT_DIR
-from image_app.ml.preprocess import load_image, load_image_from_array, preprocess_input
+from .base import InferenceModel
+from .preprocess import load_image, load_image_from_array, preprocess_input
 
 
 config = get_config()
-
-
-class InferenceModel(abc.ABC):
-
-    @abc.abstractmethod
-    def infer(self, img, topk=3):
-        raise NotImplementedError
 
 
 class DogBreedClassificationInferenceModel(InferenceModel):
@@ -54,14 +48,12 @@ class DogBreedClassificationInferenceModel(InferenceModel):
                 'output_index': output_index
             }
 
-    def infer(self, img, topk=3):
+    def infer(self, img):
         """Infer image.
 
         Args:
             img: 3-d numpy array
                 data represents a single image used for inference
-            topk: int
-                top K most likely labels to return
 
         Returns:
             np.ndarray
