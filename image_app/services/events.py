@@ -16,5 +16,5 @@ class Event:
 class Predicted(Event):
     """Convert predicted result to label."""
     prediction: np.ndarray
-    label_data: LabelData
+    model_type: str
     topk: int

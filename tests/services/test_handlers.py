@@ -3,19 +3,22 @@
 import unittest
 from unittest.mock import patch
 
-from image_app.settings import set_config
-set_config('test')
-
 import os
 import tempfile
 
 import numpy as np
 
+from image_app.exception import ConfigAlreadySetError
+from image_app.settings import set_config
+try:
+    set_config('test')
+except ConfigAlreadySetError:
+    pass
+
 from image_app.exception import InvalidImageDataFormat, InvalidMessage
 from image_app.services import commands
 from image_app.services.messagebus import messagebus
-from image_app.ml.base import LabelData
-from image_app.ml.infer import InferenceModel
+from image_app.ml import InferenceModel, LabelData, ML_MODELS, MODEL_TYPES
 from image_app.settings import ROOT_DIR
 
 
@@ -23,8 +26,11 @@ class FakeLabelData(LabelData):
 
     labels = ['test', 'infer', 'sample', 'handler']
 
-    def get_label_by_id(self, id):
-        return self.labels[id]
+    def get_label_list(self):
+        return self.labels
+
+    def get_label_by_id(self, label_id):
+        return self.labels[label_id]
 
     def get_id_by_label(self, label):
         return ''
@@ -42,16 +48,45 @@ class FakeInferenceModel(InferenceModel):
         return data
 
 
+# monkey-patch fake model for testing
+ML_MODELS['FAKE'] = {
+    'MODEL_DATA': FakeInferenceModel(),
+    'LABEL_DATA': FakeLabelData()
+}
+MODEL_TYPES.add('fake')
+
+
 class HandlersTest(unittest.TestCase):
+
+    def test_fetch_target_label(self):
+        label = messagebus.handle(commands.FetchLabels(model_type='fake', label_id=2))[0]
+        self.assertEqual(label, FakeLabelData.labels[2])
+
+    def test_fetch_all_label_items(self):
+        labels = messagebus.handle(commands.FetchLabels(model_type='fake'))
+        self.assertEqual(labels, FakeLabelData.labels)
+
+    def test_fetch_labels_by_invalid_model_type(self):
+        with self.assertRaises(InvalidMessage):
+            messagebus.handle(commands.FetchLabels(model_type='invalid'))
 
     def test_run_prediction(self):
         pred = messagebus.handle(
             commands.MakePrediction(
                 image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
-                model=FakeInferenceModel(),
+                model_type='fake',
             )
         )
         self.assertTrue(isinstance(pred, np.ndarray))
+
+    def test_fail_prediction_by_invalid_model_type(self):
+        with self.assertRaises(InvalidMessage):
+            messagebus.handle(
+                commands.MakePrediction(
+                    image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
+                    model_type='invalid',
+                )
+            )
 
     def test_raise_error_due_to_wrong_image_format_when_predicting(self):
         fp = tempfile.NamedTemporaryFile()
@@ -61,7 +96,7 @@ class HandlersTest(unittest.TestCase):
             messagebus.handle(
                 commands.MakePrediction(
                     image_path=fp.name,
-                    model=FakeInferenceModel(),
+                    model_type='fake',
                 ),
             )
 
@@ -70,7 +105,7 @@ class HandlersTest(unittest.TestCase):
         data /= data.sum()
 
         result = messagebus.handle(
-            commands.LabelPrediction(prediction=data, label_data=FakeLabelData(), topk=2)
+            commands.LabelPrediction(prediction=data, model_type='fake', topk=2)
         )
         self.assertEqual(len(result), 2)
 
@@ -78,9 +113,8 @@ class HandlersTest(unittest.TestCase):
         result = messagebus.handle(
             commands.MakePrediction(
                 image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
-                model=FakeInferenceModel(),
+                model_type='fake',
                 topk=3,
-                label_data=FakeLabelData(),
             )
         )
 
@@ -91,18 +125,7 @@ class HandlersTest(unittest.TestCase):
             messagebus.handle(
                 commands.MakePrediction(
                     image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
-                    model=FakeInferenceModel(),
-                    topk=-3,
-                    label_data=FakeLabelData(),
-                )
-            )
-
-    def test_raise_if_label_data_is_not_provided(self):
-        with self.assertRaises(InvalidMessage):
-            messagebus.handle(
-                commands.MakePrediction(
-                    image_path=os.path.join(ROOT_DIR, 'tests', 'data', 'sample.jpg'),
-                    model=FakeInferenceModel(),
+                    model_type='fake',
                     topk=-3,
                 )
             )

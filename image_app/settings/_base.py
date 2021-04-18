@@ -21,6 +21,22 @@ class EnvironmentProperty(object):
         return self.value
 
 
+class MLMODEL_PROPERTY(object):
+
+    def __init__(self):
+        self.map = None
+
+    def __get__(self, instance, owner):
+        if self.map is None:
+            self.map = {
+                'DOG_BREED': {
+                    'MODEL_DATA': os.environ.get('APP_MODEL_PATH', 'saved_model/base.tflite'),
+                    'LABEL_DATA': os.path.join(ROOT_DIR, 'data/category_list.txt')
+                },
+            }
+        return self.map
+
+
 class Config(object):
     DEBUG = False
     TESTING = False
@@ -34,9 +50,8 @@ class Config(object):
     # API
     JSONIFY_MIMETYPE = 'application/json'
 
-    # ML Model settings
-    LABEL_LIST_PATH = os.path.join(ROOT_DIR, 'data/category_list.txt')
-    MODEL_PATH = EnvironmentProperty('APP_MODEL_PATH', 'saved_model/base.tflite')
+    # ML Model data file paths
+    ML_MODELS = MLMODEL_PROPERTY()
 
     # database settings
     DATABASE_NAME = EnvironmentProperty('FLASK_DB_NAME')

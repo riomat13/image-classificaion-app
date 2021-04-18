@@ -23,7 +23,7 @@ class MessageBus(object):
                 result = self.handle_command(message)
             elif isinstance(message, events.Event):
                 result = self.handle_events(message)
-            else:
+            else:  # pragma: no cover
                 raise ValueError('Invalid message type')
         return result
 

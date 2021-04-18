@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 from . import commands, events
 from image_app.exception import FileEmptyError, InvalidImageDataFormat, InvalidMessage
 from image_app.types import PredictionResult
+from image_app.ml import get_model_data, get_label_dataset
 from image_app.ml.base import LabelData
 from image_app.ml.data import convert_image_to_tensor
 from image_app.ml.infer import InferenceModel
@@ -54,19 +55,27 @@ def upload_image(cmd: commands.UploadImage, _) -> str:
     except UnidentifiedImageError as e:
         os.remove(img_path)
         raise InvalidImageDataFormat('Invalid data format')
-    else:
+    finally:
         image.close()
 
-
-    if not os.stat(img_path).st_size:
-        os.remove(img_path)
-        raise FileEmptyError()
 
     img_model = ImageModel(filename=filename)
     img_model.save()
 
     encode = img_model.get_encode()
     return encode
+
+
+def fetch_labels(cmd: commands.FetchLabels, queue: Deque[Message]) -> List[str]:
+    """Fetch all label list from specified model type."""
+    try:
+        label_data = get_label_dataset(cmd.model_type)
+    except ValueError:
+        raise InvalidMessage('Invalid model type')
+
+    if cmd.label_id is not None:
+        return [label_data.get_label_by_id(cmd.label_id)]
+    return label_data.get_label_list()
 
 
 def make_prediction(cmd: commands.MakePrediction, queue: Deque[Message]) -> np.ndarray:
@@ -88,15 +97,20 @@ def make_prediction(cmd: commands.MakePrediction, queue: Deque[Message]) -> np.n
         image = load_image(cmd.image_path)
     except UnidentifiedImageError as e:
         raise InvalidImageDataFormat(f'The file data is not readable: {cmd.image_path}')
+
     image = preprocess_input(image)
-    prediction = cmd.model.infer(image)
+
+    try:
+        model = get_model_data(cmd.model_type)
+    except ValueError:
+        raise InvalidMessage('Invalid model type')
+
+    prediction = model.infer(image)
 
     if cmd.topk is not None and cmd.topk != 0:
-        if cmd.label_data is None:
-            raise InvalidMessage('LabelData is not provided')
         queue.append(
             events.Predicted(prediction=prediction,
-                label_data=cmd.label_data,
+                model_type=cmd.model_type,
                 topk=cmd.topk
             )
         )
@@ -111,11 +125,15 @@ def to_labels(message: Message, _) -> List[PredictionResult]:
         raise ValueError('`topk` value must be positive')
 
     most_likelies = np.argsort(message.prediction)[-message.topk:]
-    return [(message.label_data.get_label_by_id(most_likelies[i]), message.prediction[most_likelies[i]])
+    label_data = get_label_dataset(message.model_type)
+
+    return [(label_data.get_label_by_id(most_likelies[i]), message.prediction[most_likelies[i]])
             for i in reversed(range(message.topk))]
+
 
 COMMAND_HANDLERS = {
     commands.UploadImage: upload_image,
+    commands.FetchLabels: fetch_labels,
     commands.MakePrediction: make_prediction,
     commands.LabelPrediction: to_labels,
 }

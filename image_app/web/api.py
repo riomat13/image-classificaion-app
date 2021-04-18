@@ -8,9 +8,7 @@ import traceback
 from flask import Blueprint, Response, jsonify, request, current_app, abort
 import numpy as np
 
-from image_app.exception import FileEmptyError
-from image_app.ml.base import DogBreedClassificationLabelData
-from image_app.ml.infer import DogBreedClassificationInferenceModel
+from image_app.exception import FileEmptyError, InvalidMessage
 from image_app.models.image import Image
 from image_app.services import commands
 from image_app.services.messagebus import messagebus
@@ -27,24 +25,32 @@ def ping():  # pragma: no cover
     return 'hello world', 200
 
 
-@api.route('/prediction/label/<int:id>', methods=['GET'])
-def fetch_label_by_id(id):
-    labels = DogBreedClassificationLabelData.get_label_data()
-    label_name = labels.get_label_by_id(id)
+@api.route('/prediction/<model_type>/label/<int:label_id>', methods=['GET'])
+def fetch_label_by_id(model_type, label_id):
+    try:
+        label_list = messagebus.handle(
+            commands.FetchLabels(model_type=model_type, label_id=label_id)
+        )
+    except InvalidMessage:
+        return {'status': 'error', 'message': 'Invalid model type'}, 400
 
     kwargs = {
         'status': 'success',
-        'label': label_name
+        'label': label_list[0],
     }
     response = jsonify(**kwargs)
     response.status_code = 200
     return response
 
 
-@api.route('/prediction/labels/list', methods=['GET'])
-def fetch_label_list():
-    labels = DogBreedClassificationLabelData.get_label_data()
-    label_list = labels.id2label
+@api.route('/prediction/<model_type>/labels/list', methods=['GET'])
+def fetch_label_list(model_type):
+    try:
+        label_list = messagebus.handle(
+            commands.FetchLabels(model_type=model_type)
+        )
+    except InvalidMessage:
+        return {'status': 'error', 'message': 'Invalid model type'}, 400
 
     kwargs = {
         'status': 'success',
@@ -63,14 +69,6 @@ def upload_image_file_object(img_file):
     if img_file:
         try:
             encode = messagebus.handle(commands.UploadImage(file_object=img_file))
-
-        except FileEmptyError as e:
-            kwargs = {
-                'status': 'error',
-                'message': 'file is emptry'
-            }
-            status_code = 400
-
         except Exception as e:
             kwargs = {
                 'status': 'error',
@@ -103,7 +101,7 @@ def upload_image_file_object(img_file):
     return kwargs, status_code
 
 
-@api.route('/prediction/upload/image', methods=['POST'])
+@api.route('/upload/image', methods=['POST'])
 def upload_image(session=None):
     """Upload image for prediction.
 
@@ -128,8 +126,8 @@ def serialize_predict_result(item):
     return item[0], f'{prob:.2f}'
 
 
-@api.route('/prediction/serve', methods=['POST'])
-def predict_image():
+@api.route('/prediction/<model_type>/serve', methods=['POST'])
+def predict_image(model_type):
     """Predict image from a provided file.
 
     The output format is:
@@ -150,9 +148,9 @@ def predict_image():
             result = messagebus.handle(
                 commands.MakePrediction(
                     image_path=filepath,
-                    model=DogBreedClassificationInferenceModel(),
+                    model_type=model_type,
                     topk=3,
-                    label_data=DogBreedClassificationLabelData.get_label_data())
+                )
             )
 
             # convert float to percentages to display to be readable

@@ -5,13 +5,19 @@ import abc
 import os.path
 from typing import List
 
-from image_app.settings import ROOT_DIR
+from image_app.settings import get_config, ROOT_DIR
+
+config = get_config()
 
 
 class LabelData(abc.ABC):
 
     @abc.abstractclassmethod
-    def get_label_by_id(self, id) -> str:  # pragma: no cover
+    def get_label_list(self) -> List[str]:  # pragma: no cover
+        raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def get_label_by_id(self, label_id) -> str:  # pragma: no cover
         raise NotImplementedError
 
     @abc.abstractclassmethod
@@ -34,7 +40,7 @@ class DogBreedClassificationLabelData(LabelData):
         self._label2id = {}
         self._id2label = ['others']
 
-        with open(os.path.join(ROOT_DIR, 'data/category_list.txt'), 'r') as f:
+        with open(os.path.join(ROOT_DIR, config.ML_MODELS['DOG_BREED']['LABEL_DATA']), 'r') as f:
             for name in f:
                 name = name.strip()
 
@@ -61,15 +67,14 @@ class DogBreedClassificationLabelData(LabelData):
         for label in self._id2label:
             yield label
 
-    def get_label_by_id(self, id) -> str:  # pragma: no cover
-        return self._id2label[id]
+    def get_label_list(self) -> List[str]:  # pragma: no cover
+        return self._id2label[:]
+
+    def get_label_by_id(self, label_id) -> str:  # pragma: no cover
+        return self._id2label[label_id]
 
     def get_id_by_label(self, label) -> int:  # pragma: no cover
         return self._label2id[label]
-
-    @property
-    def id2label(self) -> List[str]:  # pragma: no cover
-        return self._id2label[:]
 
     @property
     def label2id(self):  # pragma: no cover

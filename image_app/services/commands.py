@@ -21,32 +21,34 @@ class UploadImage(Command):
 
 
 @dataclass
+class FetchLabels(Command):
+    """Fetch all label list."""
+    model_type: str
+    label_id : Optional[int] = None
+
+
+@dataclass
 class MakePrediction(Command):
     """Make prediction.
 
     Args:
         image_path: str
             An image file path to make prediction.
-        model: ml.infer.InferenceModel
-            Model to run prediction.
+        model_type: str
+            Model type to run prediction. e.g. "dog_breed"
         topk: int (default: 0)
             Convert to label if set to non-zero.
             If this is set to zero, return all prediction scores as numpy array.
             If this value is negative, ValueError will be raised.
-        label_data: ml.base.LabelData (default: None)
-            Used if `topk` is set as positive value
-            to convert results to labels.
-            This must be specified if `topk` is given.
     """
     image_path: str
-    model: InferenceModel
+    model_type: str
     topk: Optional[int] = 0
-    label_data: Optional[LabelData] = None
 
 
 @dataclass
 class LabelPrediction(Command):
     """Convert predicted result to label."""
     prediction: np.ndarray
-    label_data: LabelData
+    model_type: str
     topk: int

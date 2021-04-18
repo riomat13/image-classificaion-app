@@ -15,6 +15,9 @@ from image_app.settings import get_config, ROOT_DIR
 from image_app.ml.preprocess import load_image, load_image_from_array, preprocess_input
 
 
+config = get_config()
+
+
 class InferenceModel(abc.ABC):
 
     @abc.abstractmethod
@@ -35,9 +38,9 @@ class DogBreedClassificationInferenceModel(InferenceModel):
     def _load_model(cls):
         if cls.__model is None:
             config = get_config()
-            model_path = os.path.join(ROOT_DIR, config.MODEL_PATH)
+            model_path = os.path.join(ROOT_DIR, config.ML_MODELS['DOG_BREED']['MODEL_DATA'])
 
-            interpreter = tflite.Interpreter(model_path=config.MODEL_PATH)
+            interpreter = tflite.Interpreter(model_path=model_path)
             interpreter.allocate_tensors()
 
             input_details = interpreter.get_input_details()
