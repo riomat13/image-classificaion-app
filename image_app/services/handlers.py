@@ -13,7 +13,6 @@ from image_app.exception import FileEmptyError, InvalidImageDataFormat, InvalidM
 from image_app.types import PredictionResult
 from image_app.ml import get_model_data, get_label_dataset
 from image_app.ml.base import LabelData
-from image_app.ml.data import convert_image_to_tensor
 from image_app.ml.infer import InferenceModel
 from image_app.ml.preprocess import load_image, preprocess_input
 from image_app.models.image import Image as ImageModel

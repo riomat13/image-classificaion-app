@@ -5,14 +5,12 @@ import unittest
 
 from tests.models.test_mixins import BasicModelFeatureTest
 from tests.models.test_image import ImageModelFeatureTest
-from tests.ml.test_data import DataGeneratorIntegrationTest
 from tests.web.test_api import ServingModelAPITest, UploadImageTest
 
 
 test_cases = (
     BasicModelFeatureTest,
     ImageModelFeatureTest,
-    DataGeneratorIntegrationTest,
     ServingModelAPITest,
     UploadImageTest,
 )
